@@ -11,4 +11,12 @@ public class Address {
     private String street;
     private String zipcode;
 
+    protected Address() {  // JPA 스펙상 만듬
+    }
+
+    public Address(String city, String street, String zipcode) {
+        this.city = city;
+        this.street = street;
+        this.zipcode = zipcode;
+    }
 }
