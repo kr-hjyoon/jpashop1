@@ -19,18 +19,23 @@ public class Category {
 
     private String name;
 
-    @ManyToMany
+    @ManyToMany(fetch=FetchType.LAZY)
     @JoinTable(name = "category_item",
             joinColumns = @JoinColumn(name="category_id"),
-            inverseJoinColumns = @JoinColumn(name="item_id")   )
+            inverseJoinColumns = @JoinColumn(name="item_id")  )
     private List<Item> items = new ArrayList<>();
 
     // 아래는 category 를 셀프 테이블 부모 / 자식 관계 정의 예제
-    @ManyToOne
+    @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="parent_id")
     private Category parent;
 
     @OneToMany(mappedBy = "parent")
     private List<Category> child = new ArrayList<>();
+
+    public void addChildCategry(Category child){
+        this.child.add(child);
+        child.setParent(this);
+    }
 
 }
