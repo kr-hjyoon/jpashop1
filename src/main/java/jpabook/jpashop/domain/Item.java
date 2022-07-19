@@ -1,5 +1,6 @@
 package jpabook.jpashop.domain;
 
+import jpabook.jpashop.exception.NotEnoughStockException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,8 +20,23 @@ public abstract class Item {
 
     private String name;
     private int price;
-    private String stockQuantity;
+    private int stockQuantity;
 
     @ManyToMany(mappedBy = "items")
     private List<Category> categories = new ArrayList<>();
+
+    // DDD를 설계할데 Entity가 자체적으로 해결할수 있는 비즈니스 로직은 자체로 해결하는것이 좋다.
+
+    //-----비즈니스 로직 -- //
+    public void addStock (int quantity){
+        this.stockQuantity +=quantity;
+    }
+    public void removeStock (int quantity){
+        int restStock = this.stockQuantity - quantity;
+        if ( restStock < 0 ) {
+            throw  new NotEnoughStockException("need more stock");
+        }
+        this.stockQuantity +=quantity;
+    }
+
 }

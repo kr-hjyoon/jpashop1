@@ -232,3 +232,124 @@
       org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
       ```
 
+
+## 소스 구조 
+  * 계층형 구조 사용
+    * controller, web: 웹 계층
+    * service: 비즈니스 로직, 트랜잭션 처리
+    * repository: JPA를 직접 사용하는 계층, 엔티티 매니저 사용
+    * domain: 엔티티가 모여 있는 계층, 모든 계층에서 사용
+  * controller 에서  service 호출  or repository 직접호출 (간단한 경우)
+  * 개발 순서: 서비스, 리포지토리 계층을 개발하고, 테스트 케이스를 작성해서 검증, 마지막에 웹 계층 적용
+
+## Repository 작성 
+  * repository class에 @Repository  어노테이션 추가 
+    * 스프링 빈으로 등록, JPA 예외를 스프링 기반 예외로 예외 변환
+  * EntityManager 주입받기 
+    ```java
+    @PersistenceContext
+    private EntityManager em;
+    ```
+  * CURD 메서드 작성
+    * save
+    * findOne
+    * findAll, findByName
+    
+  * EntityManger 주입 받기 (개선) 
+    ```java
+    @Repository
+    @RequiredArgsConstructor
+    public class MemberRepository {
+      private final EntityManager em;
+    }
+    ```
+
+## Service 작성
+  * service class에 @Service 어노테이션 추가
+    * 스프링 빈으로 등록
+    * @Transactional(readOnly = true) 추가
+      * write 메서드가 존재하면  @Transactional(readOnly = false ) 직접 추가 , default가 false이므로 생략 가능 
+      * 트랜잭션, 영속성 컨텍스트
+        * readOnly=true 
+          * 데이터의 변경이 없는 읽기 전용 메서드에 사용, 영속성 컨텍스트를 플러시 하지 않으므로 약간의 성능 향상(읽기 전용에는 다 적용)
+          *  데이터베이스 드라이버가 지원하면 DB에서 성능 향상
+  * Repository 주입받기
+    * 생성자 Injection 많이 사용, 생성자가 하나면 생략 가능
+    ```java
+      @Autowired
+      private MemberRepository memberRepository;
+    ```
+ * 서비스 메서드 작성
+    * join
+      * 중복체크 (ValidateDuplicateMember)
+    * findOne
+    * findMembers
+
+## feild injection vs setter injection  vs 생성자 injection
+
+  ```java
+  //필드 주입
+  public class MemberService {
+      @Autowired
+      MemberRepository memberRepository;
+  }
+
+  //생성자 주입
+  public class MemberService {
+    private final MemberRepository memberRepository;
+    public MemberService(MemberRepository memberRepository) {
+      this.memberRepository = memberRepository;
+    }
+  }
+  ```
+  * 생성자 주입 방식을 권장
+    * 변경 불가능한 안전한 객체 생성 가능
+    * 생성자가 하나면, @Autowired 를 생략할 수 있다.
+    * final 키워드를 추가하면 컴파일 시점에 memberRepository 를 설정하지 않는 오류를 체크할 수 있다.(보통 기본 생성자를 추가할 때 발견)
+
+  * lombok
+  ```java
+      @RequiredArgsConstructor
+      public class MemberService {
+      private final MemberRepository memberRepository;
+      }
+  ```
+
+## 테스트 코드 작성 
+  * Ctrl + Alt + T 로 자동 생성 
+  * given - when - then 기법 사용
+    * 참고: 테스트 케이스 작성 고수 되는 마법: Given, When, Then
+    * http://martinfowler.com/bliki/GivenWhenThen.html
+  * 필요한 Serivce , Repository , EntityManger (Optional ) 주입
+  * 스프링 FW 통합테스트 어노테이션 
+    * @RunWith(SpringRunner.class) 
+  * 스프링 부트로 테스트시 : : 스프링 부트 띄우고 테스트(이게 없으면 @Autowired 다 실패)
+    * @SpringBootTest 
+  * 롤백 설정 
+    * @Transactional : 반복 가능한 테스트 지원, 
+      * 각각의 테스트를 실행할 때마다 트랜잭션을 시작하고 테스트가 끝나면 트랜잭션을 강제로 롤백 
+        * 이 어노테이션이 테스트 케이스에서 사용될 때만 롤백 (default 값이 false )
+  * 특정 Exception  테스트 성공으로 기대될때 
+    * 기대되는 Exception정의 
+      * @Test(expected=IllegalStateException.class)
+    * 메서드 마지막에 fail 처리 (기대하는 Exception이 발생하지 않음 )
+      * Assert.fail("TC 실패 ");
+
+   ```java
+    @RunWith(SpringRunner.class)
+    @SpringBootTest
+    @Transactional
+    public class MemberServiceTest {
+        @Autowired MemberService memberService;
+        @Autowired MemberRepository memberRepository;
+        @AutowiredEntityManager em;
+   ```
+## DB 테스트 환경 분리
+  * test 디렉토리 아래 resource 디렉토리를 직접 생성
+  * 생성한 디레토리에 application.yml을  복사해온다. 
+  * yml 설정 변경 
+    * url: jdbc:h2:mem:test
+    * ddl-auto: create-drop
+
+## Entity 객체에 Business 로직 구현하기 
+   * DDD를 설계할 때 Entity가 자체적으로 해결할수 있는 비즈니스 로직은 자체로 해결하는것이 좋다.
