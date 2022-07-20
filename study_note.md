@@ -353,3 +353,22 @@
 
 ## Entity 객체에 Business 로직 구현하기 
    * DDD를 설계할 때 Entity가 자체적으로 해결할수 있는 비즈니스 로직은 자체로 해결하는것이 좋다.
+
+## Cascade 어떻게 설정해야 하나?
+  * Persist해야 하는 LIFE CYCLE가 동일할 때 
+    * 참조하는 객체가 다른 곳이 없을때    
+      * OrderItem은 order만 참고함 
+      * Delivery도 order만 참고함
+
+## 비즈니스 구현 패턴
+  * 도메인 모델 패턴 
+    * 엔티티가 비즈니스 로직을 가지고 객체 지향의 특성을 적극 활용하는 것
+    * http://martinfowler.com/eaaCatalog/domainModel.html
+  * 트랜잭션 스크립트 패턴 
+    * 엔티티에는 비즈니스 로직이 거의 없고 서비스 계층에서 대부분의 비즈니스 로직을 처리하는 것 
+    * http://martinfowler.com/eaaCatalog/transactionScript.html
+
+  * 한프로젝트 안에서도 도메인 모델 패턴과 트랜잭션 스크립트 패턴이 양립을한다. 
+    * 내 문맥에 맞게 사용 
+
+
